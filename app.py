@@ -8,7 +8,8 @@ Architecture:
 - Analytics: Deterministic financial calculations via Pandas
 - Visualizations: Interactive Plotly charts
 """
-
+from textwrap import dedent
+from html import escape
 from datetime import date, timedelta
 import streamlit as st
 
@@ -56,70 +57,120 @@ def initialize_app_services():
 
 
 def render_sidebar(service: TransactionService, status: dict):
-    """Renders the sidebar navigation, database status, and demo dataset controls."""
+    """Render the FinPlot AI sidebar."""
+
     with st.sidebar:
-        # Brand Box
+
+        # ---------------- BRANDING ----------------
         st.markdown(
             """
             <div class="sidebar-brand-box">
+                <div class="brand-logo">FP</div>
                 <div class="brand-title">FinPlot AI</div>
-                <div class="brand-tagline">AI-Powered Bookkeeping & Reconciliation</div>
+                <div class="brand-tagline">
+                    FINANCIAL INTELLIGENCE PLATFORM
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        # Storage Engine Status
-        is_cloud = status.get("mode") == "supabase" and status.get("is_connected", False)
-        if is_cloud:
-            st.markdown(
-                """
-                <div style="text-align: center; margin-bottom: 1rem;">
-                    <span class="status-badge-cloud">🟢 Supabase Cloud Active</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                """
-                <div style="text-align: center; margin-bottom: 1rem;">
-                    <span class="status-badge-local">🟡 Local SQLite Demo Mode</span>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+        # ---------------- STORAGE STATUS ----------------
+        is_cloud = (
+            status.get("mode") == "supabase"
+            and status.get("is_connected", False)
+        )
 
-        with st.expander("ℹ️ Storage Details", expanded=False):
-            st.caption(f"**Storage Engine:** {'Supabase PostgreSQL' if is_cloud else 'Local SQLite (Persistent)'}")
-            st.caption(f"**Endpoint:** {status.get('url', 'finplot_local.db')}")
+        if is_cloud:
+            status_label = "Supabase Cloud Active"
+            status_class = "status-badge-cloud"
+            status_icon = "●"
+        else:
+            status_label = "Local SQLite Demo Mode"
+            status_class = "status-badge-local"
+            status_icon = "●"
+
+        st.markdown(
+            f"""
+            <div class="sidebar-status">
+                <span class="{status_class}">
+                    <span class="status-dot">{status_icon}</span>
+                    {status_label}
+                </span>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        # ---------------- STORAGE DETAILS ----------------
+        with st.expander("Storage Details", expanded=False):
+            st.caption(
+                f"**Storage Engine:** "
+                f"{'Supabase PostgreSQL' if is_cloud else 'Local SQLite (Persistent)'}"
+            )
+            st.caption(
+                f"**Endpoint:** {status.get('url', 'finplot_local.db')}"
+            )
             st.caption(status.get("message", ""))
+
             if not is_cloud:
                 st.info(
-                    "To connect to Supabase Cloud, add your `SUPABASE_URL` and `SUPABASE_KEY` to the `.env` file and run the SQL migration."
+                    "To connect to Supabase Cloud, add your "
+                    "SUPABASE_URL and SUPABASE_KEY to the .env file "
+                    "and run the SQL migration."
                 )
 
-        st.markdown("---")
+        st.markdown('<div class="sidebar-divider"></div>',
+                    unsafe_allow_html=True)
 
-        # Navigation
-        st.markdown("<div style='font-size:0.8rem; font-weight:700; color:#94a3b8; text-transform:uppercase;'>Navigation</div>", unsafe_allow_html=True)
+        # ---------------- NAVIGATION ----------------
+        st.markdown(
+            '<div class="sidebar-section-title">WORKSPACE</div>',
+            unsafe_allow_html=True,
+        )
+
         nav_choice = st.radio(
             "Go to",
-            options=["📊 Dashboard", "💳 Transactions", "📈 Reports (Phase 5)", "⚙️ Settings"],
+            options=[
+                "📊 Dashboard",
+                "💳 Transactions",
+                "📈 Reports (Phase 5)",
+                "⚙️ Settings",
+            ],
             label_visibility="collapsed",
         )
 
-        st.markdown("---")
+        st.markdown('<div class="sidebar-divider"></div>',
+                    unsafe_allow_html=True)
 
-        # Dataset Management
-        st.markdown("<div style='font-size:0.8rem; font-weight:700; color:#94a3b8; text-transform:uppercase;'>Demo Dataset</div>", unsafe_allow_html=True)
-        st.caption("Load isolated sample business transactions to evaluate the dashboard and charts.")
+        # ---------------- DEMO DATASET ----------------
+        st.markdown(
+            '<div class="sidebar-section-title">DATA MANAGEMENT</div>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <div class="sidebar-description">
+                Manage sample business transactions to explore
+                financial insights and dashboard features.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         col_load, col_clear = st.columns(2)
+
         with col_load:
-            if st.button("🚀 Load Demo", use_container_width=True, help="Load realistic sample transactions tagged with is_demo=True"):
-                with st.spinner("Seeding demo transactions..."):
+            if st.button(
+                "Load Demo",
+                use_container_width=True,
+                type="primary",
+                help="Load sample business transactions",
+            ):
+                with st.spinner("Loading demo transactions..."):
                     count, errs = service.load_demo_dataset()
+
                     if count > 0:
                         st.success(f"Loaded {count} demo transactions!")
                         st.rerun()
@@ -127,29 +178,59 @@ def render_sidebar(service: TransactionService, status: dict):
                         st.error("Failed to load demo data.")
 
         with col_clear:
-            if st.button("🗑️ Clear Demo", use_container_width=True, help="Safely removes only demo records"):
+            if st.button(
+                "Clear Demo",
+                use_container_width=True,
+                type="secondary",
+                help="Remove only demo transactions",
+            ):
                 with st.spinner("Removing demo transactions..."):
                     deleted_count = service.remove_demo_dataset()
                     st.info(f"Cleared {deleted_count} demo records.")
                     st.rerun()
 
-        # Database Stats
+        # ---------------- DATABASE STATISTICS ----------------
+        # ---------------- DATABASE STATISTICS ----------------
+                # ---------------- DATABASE STATISTICS ----------------
         stats = service.get_stats()
+
+        stats_html = dedent(f"""
+        <div class="sidebar-stats">
+            <div class="sidebar-stats-heading">
+                DATABASE OVERVIEW
+            </div>
+
+            <div class="sidebar-stat-row">
+                <span>Total Records</span>
+                <strong>{escape(str(stats['total']))}</strong>
+            </div>
+
+            <div class="sidebar-stat-row">
+                <span>Live Records</span>
+                <strong class="live-count">{escape(str(stats['real']))}</strong>
+            </div>
+
+            <div class="sidebar-stat-row">
+                <span>Demo Records</span>
+                <strong class="demo-count">{escape(str(stats['demo']))}</strong>
+            </div>
+        </div>
+        """).strip()
+
+        st.html(stats_html)
+
+        # ---------------- FOOTER ----------------
         st.markdown(
-            f"""
-            <div style="margin-top: 1rem; padding: 0.75rem; background: rgba(30, 41, 59, 0.4); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.8rem; color: #94a3b8;">
-                <div>Total Records: <b style="color: #f8fafc;">{stats['total']}</b></div>
-                <div>Live Records: <b style="color: #34d399;">{stats['real']}</b></div>
-                <div>Demo Records: <b style="color: #c084fc;">{stats['demo']}</b></div>
+            """
+            <div class="sidebar-footer">
+                <span>FinPlot AI</span>
+                <span>VERSION 1.0</span>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-        st.markdown("<div style='margin-top: 1.5rem; text-align: center; font-size: 0.75rem; color: #64748b;'>FinPlot AI v1.0 • Phase 1</div>", unsafe_allow_html=True)
-
         return nav_choice
-
 
 def render_dashboard_page(service: TransactionService):
     """Renders the executive summary dashboard with KPIs, charts, and activity."""
